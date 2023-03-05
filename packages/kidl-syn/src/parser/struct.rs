@@ -22,6 +22,7 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
         while let Some(token) = self.tokens.next() {
             match token.kind {
                 trivia_with_newline!() => self.consume(token),
+                TokenKind::Ident => self.parse_struct_field(token, TokenKind::Comma),
                 TokenKind::CurlyClose => {
                     self.consume(token);
                     break;
@@ -32,5 +33,21 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
 
         self.consume_trivia_until_nl();
         self.builder.finish_node();
+    }
+
+    pub(crate) fn parse_struct_field(&mut self, token: Token<'t>, separator: TokenKind) {
+        self.builder.start_node(NodeKind::StructField.into());
+        self.consume(token);
+        self.consume_trivia();
+        self.consume_maybe(TokenKind::Question);
+        self.consume_trivia();
+        self.expect_token(TokenKind::Colon);
+        self.consume_trivia();
+        if let Some(ident) = self.maybe(TokenKind::Ident) {
+            self.parse_type(ident);
+        }
+        self.consume_trivia();
+        self.consume_maybe(separator);
+        self.builder.finish_node()
     }
 }

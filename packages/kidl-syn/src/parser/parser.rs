@@ -124,7 +124,7 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
         }
     }
 
-    fn consume_maybe(&mut self, kind: TokenKind) -> bool {
+    pub fn consume_maybe(&mut self, kind: TokenKind) -> bool {
         if let Some(token) = self.maybe(kind) {
             self.consume(token);
             return true;
