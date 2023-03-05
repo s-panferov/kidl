@@ -15,3 +15,7 @@ snapdown = "1.0.0"
 [[test]]
 name = "lexer"
 harness = false
+
+[[test]]
+name = "parser"
+harness = false

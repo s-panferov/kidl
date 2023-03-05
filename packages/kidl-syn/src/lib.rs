@@ -1,3 +1,4 @@
+pub mod debug;
 pub mod helpers;
 pub mod kind;
 pub mod lang;
