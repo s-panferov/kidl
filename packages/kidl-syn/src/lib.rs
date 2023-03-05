@@ -1,3 +1,4 @@
+pub mod ast;
 pub mod debug;
 pub mod helpers;
 pub mod kind;
