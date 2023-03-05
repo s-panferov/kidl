@@ -36,6 +36,7 @@ pub enum TokenKind {
 pub enum NodeKind {
     Root = 1000,
     Error,
+    Struct,
 }
 
 impl From<SyntaxKind> for rowan::SyntaxKind {

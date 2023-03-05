@@ -4,19 +4,13 @@ struct Struct { }
 
 ```
 Node(Root)(
-    Node(Error)(
+    Node(Struct)(
         Token(Ident)["struct"],
-    ),
-    Token(Space),
-    Node(Error)(
+        Token(Space),
         Token(Ident)["Struct"],
-    ),
-    Token(Space),
-    Node(Error)(
+        Token(Space),
         Token(CurlyOpen),
-    ),
-    Token(Space),
-    Node(Error)(
+        Token(Space),
         Token(CurlyClose),
     ),
 )
