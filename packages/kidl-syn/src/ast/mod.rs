@@ -4,6 +4,7 @@ use crate::lang::KIDL;
 pub mod macros;
 
 mod helpers;
+mod ident;
 pub type SyntaxNode = rowan::SyntaxNode<KIDL>;
 pub type SyntaxToken = rowan::SyntaxToken<KIDL>;
 pub type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
