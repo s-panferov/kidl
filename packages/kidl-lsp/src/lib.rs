@@ -1,18 +1,27 @@
 use std::error::Error;
 
-use lsp_server::{Connection, ExtractError, Message, Request, Response, ResponseError};
-use lsp_types::{InitializeParams, PositionEncodingKind, ServerCapabilities};
+use kidl_db::Database;
+
+use lsp_server::{
+    Connection, ExtractError, Message, Notification, Request, Response, ResponseError,
+};
+
+use lsp_types::{
+    notification::{DidChangeTextDocument, DidOpenTextDocument, Notification as _},
+    InitializeParams, PositionEncodingKind, ServerCapabilities,
+};
+
+pub mod position;
+pub mod text;
 
 pub fn start() -> Result<(), Box<dyn Error + Sync + Send>> {
     tracing::info!("KIDL LSP server is ready");
 
-    // Create the transport. Includes the stdio (stdin and stdout) versions but this could
-    // also be implemented to use sockets or HTTP.
     let (connection, io_threads) = Connection::stdio();
 
-    // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
     let server_capabilities = serde_json::to_value(&ServerCapabilities {
         position_encoding: Some(PositionEncodingKind::UTF16),
+        text_document_sync: Some(self::text::capabilities()),
         ..Default::default()
     })
     .unwrap();
@@ -21,8 +30,8 @@ pub fn start() -> Result<(), Box<dyn Error + Sync + Send>> {
     main_loop(connection, initialization_params)?;
     io_threads.join()?;
 
-    // Shut down gracefully.
     eprintln!("shutting down server");
+
     Ok(())
 }
 
@@ -32,6 +41,9 @@ pub fn main_loop(
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     let _params: InitializeParams = serde_json::from_value(params).unwrap();
     eprintln!("starting example main loop");
+
+    let mut db = Database::default();
+
     for msg in &connection.receiver {
         match msg {
             Message::Request(req) => {
@@ -76,6 +88,14 @@ pub fn main_loop(
                 eprintln!("got response: {resp:?}");
             }
             Message::Notification(not) => match AsRef::<str>::as_ref(&not.method) {
+                DidOpenTextDocument::METHOD => {
+                    let params = cast_notification::<DidOpenTextDocument>(not).unwrap();
+                    crate::text::open(&mut db, &params);
+                }
+                DidChangeTextDocument::METHOD => {
+                    let params = cast_notification::<DidChangeTextDocument>(not).unwrap();
+                    crate::text::edit(&mut db, &params.text_document.uri, params.content_changes);
+                }
                 _ => {
                     eprintln!("got notification: {:?}", not.method);
                 }
@@ -104,4 +124,12 @@ where
     req.extract(R::METHOD)
         .map(|(_, params)| serde_json::to_value(&func(params)).unwrap())
         .map_err(to_response_error)
+}
+
+fn cast_notification<N>(req: Notification) -> Result<N::Params, ExtractError<Notification>>
+where
+    N: lsp_types::notification::Notification,
+    N::Params: serde::de::DeserializeOwned,
+{
+    req.extract(N::METHOD)
 }
