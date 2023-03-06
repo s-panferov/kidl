@@ -1,0 +1,12 @@
+[package]
+name = "kidl-db"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+kidl-syn = { path = "../kidl-syn" }
+salsa = { git = "https://github.com/salsa-rs/salsa", package = "salsa-2022" }
+ropey = "1.6.0"
+rowan = "0.15.10"
