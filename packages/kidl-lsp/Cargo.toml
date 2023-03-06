@@ -1,0 +1,18 @@
+[package]
+name = "kidl-lsp"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lsp-server = "0.7.0"
+lsp-types = { version = "0.94.0", features = ["proposed"] }
+serde_json = "1.0.93"
+serde = "1.0.152"
+kidl-syn = { path = "../kidl-syn" }
+kidl-db = { path = "../kidl-db" }
+ropey = "1.6.0"
+rowan = "0.15.10"
+bitflags = "1.3.2"
+tracing = "0.1.37"

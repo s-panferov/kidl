@@ -1,0 +1,73 @@
+{
+  "name": "kidl",
+  "displayName": "KIDL Language server extension",
+  "publisher": "kidl",
+  "private": true,
+  "version": "0.0.1",
+  "repository": {
+    "url": "https://github.com/s-panferov/kidl"
+  },
+  "author": {
+    "name": "Stanislav Panferov",
+    "email": "stanislav@panferov.dev"
+  },
+  "license": "PRIVATE",
+  "enabledApiProposals": [],
+  "dependencies": {
+    "vscode-languageclient": "*"
+  },
+  "devDependencies": {
+    "@types/vscode": "*",
+    "@types/node": "18.11.18"
+  },
+  "engines": {
+    "vscode": "^1.66.0"
+  },
+  "main": "./target/dist/main.js",
+  "activationEvents": [
+    "workspaceContains:**/*.kidl"
+  ],
+  "contributes": {
+    "configurationDefaults": {
+      "[kidl]": {
+        "editor.semanticHighlighting.enabled": true
+      }
+    },
+    "languages": [
+      {
+        "id": "kidl",
+        "extensions": [
+          ".kidl"
+        ],
+        "aliases": [
+          "KIDL"
+        ],
+        "filenames": [],
+        "configuration": "./language-configuration.json"
+      }
+    ]
+  },
+  "languages": [
+    {
+      "id": "kidl",
+      "extensions": [
+        ".kidl"
+      ],
+      "aliases": [
+        "KIDL"
+      ],
+      "configuration": "language-configuration.json"
+    }
+  ],
+  "scripts": {
+    "vscode:prepublish": "npm run build-base -- --minify && npm run cargo",
+    "cargo": "cargo build --release && cp ../../target/release/kidl-cli ./target/dist",
+    "package": "vsce package --no-dependencies -o target/KIDL.vsix",
+    "build-base": "esbuild ./src/main.ts --bundle --outfile=target/dist/main.js --external:vscode --format=cjs --platform=node --target=node16",
+    "build": "npm run build-base -- --sourcemap",
+    "watch": "npm run build-base -- --sourcemap --watch",
+    "lint": "prettier --check . && eslint -c .eslintrc.js --ext ts ./src ./tests",
+    "fix": "prettier --write . && eslint -c .eslintrc.js --ext ts ./src ./tests --fix",
+    "pretest": "tsc && npm run build"
+  }
+}
