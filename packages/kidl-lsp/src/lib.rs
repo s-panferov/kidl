@@ -8,9 +8,11 @@ use lsp_server::{
 
 use lsp_types::{
     notification::{DidChangeTextDocument, DidOpenTextDocument, Notification as _},
+    request::{Request as _, SemanticTokensFullRequest},
     InitializeParams, PositionEncodingKind, ServerCapabilities,
 };
 
+pub mod highlight;
 pub mod position;
 pub mod text;
 
@@ -22,6 +24,7 @@ pub fn start() -> Result<(), Box<dyn Error + Sync + Send>> {
     let server_capabilities = serde_json::to_value(&ServerCapabilities {
         position_encoding: Some(PositionEncodingKind::UTF16),
         text_document_sync: Some(self::text::capabilities()),
+        semantic_tokens_provider: Some(self::highlight::capabilities()),
         ..Default::default()
     })
     .unwrap();
@@ -56,6 +59,11 @@ pub fn main_loop(
                 let id = req.id.clone();
 
                 let result = match AsRef::<str>::as_ref(&req.method) {
+                    SemanticTokensFullRequest::METHOD => {
+                        answer::<SemanticTokensFullRequest>(req, |params| {
+                            self::highlight::semantic_tokens(&mut db, params)
+                        })
+                    }
                     _ => Err(ResponseError {
                         code: 0,
                         message: String::from("Unknown request"),
