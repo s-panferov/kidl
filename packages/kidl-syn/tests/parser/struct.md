@@ -4,7 +4,7 @@ struct Struct {
 }
 ```
 
-``` --draft
+```
 Node(Root)(
     Node(Struct)(
         Token(Ident)["struct"],
