@@ -138,9 +138,15 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
     }
 
     pub fn unexpected(&mut self, token: Token<'t>) {
-        self.builder.start_node(NodeKind::Error.into());
-        self.consume(token);
-        self.builder.finish_node();
+        self.errors.push(SyntaxError::new_at_offset(
+            format!("Unexpected {:?}", token),
+            self.offset,
+        ))
+    }
+
+    pub fn error(&mut self, msg: impl Into<String>) {
+        self.errors
+            .push(SyntaxError::new_at_offset(msg, self.offset))
     }
 
     pub fn expected(&mut self, expected: &[TokenKind], got: TokenKind) {
