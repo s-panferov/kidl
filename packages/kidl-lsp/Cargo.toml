@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 lsp-server = "0.7.0"
 lsp-types = { version = "0.94.0", features = ["proposed"] }
-serde_json = "1.0.93"
-serde = "1.0.152"
+serde_json = "1.0.94"
+serde = "1.0.154"
 kidl-syn = { path = "../kidl-syn" }
 kidl-db = { path = "../kidl-db" }
 ropey = "1.6.0"
