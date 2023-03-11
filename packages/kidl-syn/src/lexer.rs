@@ -1,6 +1,6 @@
 use std::{borrow::Cow, marker::PhantomData};
 
-use crate::{helpers::Bytes, kind::TokenKind, source::Source};
+use crate::{helpers::ByteOffset, kind::TokenKind, source::Source};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Token<'a> {
@@ -20,8 +20,8 @@ impl<'a> Token<'a> {
 #[derive(Clone)]
 pub struct Lexer<'a, S: Source<'a>> {
     source: S,
-    offset: Bytes,
-    consumed: Bytes,
+    offset: ByteOffset,
+    consumed: ByteOffset,
     _a: PhantomData<&'a ()>,
 }
 
@@ -48,7 +48,7 @@ impl<'a, S: Source<'a>> Lexer<'a, S> {
 
     fn consume(&mut self) -> Option<char> {
         self.source.next().map(|c| {
-            self.consumed += Bytes(c.len_utf8());
+            self.consumed += ByteOffset(c.len_utf8());
             c
         })
     }
@@ -145,8 +145,8 @@ impl<'a, S: Source<'a>> Iterator for Lexer<'a, S> {
 
 pub fn tokenize<'a, S: Source<'a>>(source: S) -> Lexer<'a, S> {
     Lexer {
-        offset: Bytes(0),
-        consumed: Bytes(0),
+        offset: ByteOffset(0),
+        consumed: ByteOffset(0),
         _a: PhantomData,
         source,
     }
