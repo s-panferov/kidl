@@ -3,6 +3,7 @@ use std::{iter::Peekable, marker::PhantomData};
 use rowan::{GreenNode, GreenNodeBuilder};
 
 use crate::{
+    helpers::ByteOffset,
     kind::{NodeKind, TokenKind},
     lexer::{tokenize, Token},
     source::StrSource,
@@ -10,12 +11,16 @@ use crate::{
 
 pub use rowan::NodeCache;
 
+use super::utility::{combinators::ExpectPredicate, error::SyntaxError};
+
 pub trait TokenIter<'t>: Iterator<Item = Token<'t>> {}
 impl<'t, T> TokenIter<'t> for T where T: Iterator<Item = Token<'t>> {}
 
 pub struct Parser<'c, 't, T: TokenIter<'t>> {
     pub(crate) builder: GreenNodeBuilder<'c>,
     pub(crate) tokens: Peekable<T>,
+    pub(crate) errors: Vec<SyntaxError>,
+    offset: ByteOffset,
     #[cfg(debug_assertions)]
     parsed: String,
     _t: PhantomData<&'t ()>,
@@ -25,14 +30,13 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
     pub fn consume(&mut self, token: Token<'t>) {
         #[cfg(debug_assertions)]
         self.parsed.push_str(&token.slice);
+        self.offset += ByteOffset(token.slice.len());
         self.builder.token(token.kind.into(), &token.slice)
     }
 
     pub fn consume_next(&mut self) {
         let token = self.tokens.next().unwrap();
-        #[cfg(debug_assertions)]
-        self.parsed.push_str(&token.slice);
-        self.builder.token(token.kind.into(), &token.slice)
+        self.consume(token);
     }
 
     #[allow(unused)]
@@ -59,39 +63,39 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
         }
     }
 
-    pub fn expect(&mut self, mut predicate: impl FnMut(&Token<'t>) -> bool) {
-        let mut error = false;
-        while let Some(token) = self.tokens.next() {
-            let predicate = predicate(&token);
-            if !predicate {
-                if let TokenKind::Space | TokenKind::Comment | TokenKind::NewLine = token.kind {
-                    self.consume(token);
+    pub fn expect(
+        &mut self,
+        predicate: impl ExpectPredicate,
+        skip: &[TokenKind],
+        stop_if: impl Fn(&Token) -> bool,
+    ) -> bool {
+        let mut error_fired = false;
+        while let Some(token) = self.tokens.peek() {
+            if !predicate.matches(&token) {
+                if skip.contains(&token.kind) {
+                    self.consume_next();
                     continue;
                 }
 
-                if !error {
-                    error = true;
-                    self.builder.start_node(NodeKind::Error.into());
-                    self.consume(token);
+                if stop_if(&token) {
+                    if !error_fired {
+                        // We failed to match a token we are looking for
+                        // We need to emit at least one error
+                        self.errors.push(predicate.error(&token, self.offset));
+                    }
+                    return false;
                 }
+
+                error_fired = true;
+                self.errors.push(predicate.error(&token, self.offset));
+                self.consume_next();
             } else {
-                if error {
-                    self.builder.finish_node();
-                }
-                self.consume(token);
-                return;
+                self.consume_next();
+                return true;
             }
         }
 
-        // Make sure we close opened error node on EOL
-        if error {
-            self.builder.finish_node()
-        }
-    }
-
-    #[inline]
-    pub fn expect_token(&mut self, kind: TokenKind) {
-        self.expect(|t| t.kind == kind)
+        return false;
     }
 
     pub fn maybe(&mut self, kind: TokenKind) -> Option<Token<'t>> {
@@ -138,20 +142,34 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
         self.consume(token);
         self.builder.finish_node();
     }
+
+    pub fn expected(&mut self, expected: &[TokenKind], got: TokenKind) {
+        self.errors.push(SyntaxError::new_at_offset(
+            format!("Expected [{:?}], got {:?}", expected, got),
+            self.offset,
+        ))
+    }
 }
 
-pub fn parse<'c, 't>(tokens: impl TokenIter<'t>, cache: &'c mut rowan::NodeCache) -> GreenNode {
+pub struct Parsed {
+    pub schema: GreenNode,
+    pub errors: Vec<SyntaxError>,
+}
+
+pub fn parse<'c, 't>(tokens: impl TokenIter<'t>, cache: &'c mut rowan::NodeCache) -> Parsed {
     let parser = Parser {
         builder: GreenNodeBuilder::with_cache(cache),
         tokens: tokens.peekable(),
         #[cfg(debug_assertions)]
         parsed: String::new(),
+        offset: ByteOffset(0),
         _t: PhantomData,
+        errors: Vec::new(),
     };
 
     parser.parse_schema()
 }
 
-pub fn parse_str<'a>(source: &'a str) -> GreenNode {
+pub fn parse_str<'a>(source: &'a str) -> Parsed {
     parse(tokenize(StrSource::new(source)), &mut NodeCache::default())
 }

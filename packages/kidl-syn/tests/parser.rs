@@ -9,10 +9,12 @@ fn parser(path: &Path) -> datatest_stable::Result<()> {
             let input = &test[0];
             let output = &test[1];
 
-            let tree = kidl_syn::parser::parse_str(input.text);
-            output
-                .result
-                .set(Some(format!("{:#?}", DebugNodePrinter(tree))));
+            let parsed = kidl_syn::parser::parse_str(input.text);
+            output.result.set(Some(format!(
+                "{:#?} {:#?}",
+                DebugNodePrinter(parsed.schema),
+                parsed.errors
+            )));
         });
     })
 }

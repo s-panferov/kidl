@@ -1,5 +1,6 @@
 #[macro_use]
-pub mod macros;
+mod utility;
+
 pub mod parser;
 mod schema;
 mod r#struct;
