@@ -38,6 +38,8 @@ pub enum NodeKind {
     Error,
     Struct,
     StructField,
+    Path,
+    Use,
     Type,
     TypeArguments,
 }
