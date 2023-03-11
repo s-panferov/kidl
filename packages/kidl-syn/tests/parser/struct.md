@@ -1,10 +1,10 @@
 ```rust
 struct Struct {
-    a: Test,
-}
+    field: Test,
+}  
 ```
 
-```
+``` --draft
 Node(Root)(
     Node(Struct)(
         Token(Ident)["struct"],
@@ -15,7 +15,7 @@ Node(Root)(
         Token(NewLine),
         Token(Space),
         Node(StructField)(
-            Token(Ident)["a"],
+            Token(Ident)["field"],
             Token(Colon),
             Token(Space),
             Node(Type)(
@@ -25,6 +25,12 @@ Node(Root)(
         ),
         Token(NewLine),
         Token(CurlyClose),
+        Token(Space),
     ),
-)
+) [
+    SyntaxError(
+        "Expected CurlyOpen, found Ident",
+        Byte(7)..Byte(7),
+    ),
+]
 ```

@@ -2,10 +2,10 @@ use rowan::GreenNode;
 
 use crate::kind::{NodeKind, TokenKind};
 
-use super::{Parser, TokenIter};
+use super::{Parsed, Parser, TokenIter};
 
 impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
-    pub fn parse_schema(mut self) -> GreenNode {
+    pub fn parse_schema(mut self) -> Parsed {
         self.builder.start_node(NodeKind::Root.into());
 
         let mut checkpoint = self.builder.checkpoint();
@@ -25,6 +25,9 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
         }
 
         self.builder.finish_node();
-        self.builder.finish()
+        Parsed {
+            schema: self.builder.finish(),
+            errors: self.errors,
+        }
     }
 }

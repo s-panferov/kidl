@@ -4,7 +4,10 @@ use crate::{
     parser::Parser,
 };
 
-use super::TokenIter;
+use super::{
+    utility::combinators::{kind, TRIVIA_NL},
+    TokenIter,
+};
 
 impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
     pub(crate) fn parse_type(&mut self, ident: Token<'t>) {
@@ -17,6 +20,7 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
             self.builder
                 .start_node_at(checkpoint, NodeKind::TypeArguments.into());
             // has type arguments
+
             self.consume_trivia();
 
             if let Some(ident) = self.maybe(TokenKind::Ident) {
@@ -30,7 +34,8 @@ impl<'c, 't, T: TokenIter<'t>> Parser<'c, 't, T> {
                     self.parse_type(ident);
                 }
             }
-            self.expect_token(TokenKind::AngleClose);
+
+            self.expect(kind(TokenKind::AngleClose), &TRIVIA_NL, |t| false);
             self.builder.finish_node();
         }
 
